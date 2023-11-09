@@ -78,3 +78,36 @@ result = grc_clear_state(&dev);
 // === 6.  Driver’s De-initialization ===
 result = grc_release(&dev);
 ```
+
+To avoid training every time, a model can be pre-trained, and the result will be saved for further usage.
+
+```cpp
+// === 3b.1. Training and Saving a Model ===
+struct grc_training_params train_params;
+float *train_data;
+uint32_t train_data_len;
+result = grc_train(&dev, &train_params, train_data, train_data_len);
+// ---------- Save in memory of the Host device ------
+struct grc_internal_state *internal_states;
+uint32_t internal_states_len;
+result = grc_download(&dev, &internal_state, &internal_states_len);
+// ---------- or in the GRC internal memory----------
+result = grc_store(&dev)
+Afterwards, the model can be loaded to GRC
+// === 3b.2 Loading a pre-trained model ===
+// ------------- from Host device memory ----------
+result = grc_upload(&dev, internal_states, internal_states_len);
+// ------------- or from GRC internal memory --------
+result = grc_restore(&dev)
+```
+
+## Methods
+### Device Configuration
+### AI SW Configuration
+### Detection / classification
+### Information about AI SW
+### Saving / Loading AI SW
+## Error Codes
+### Error codes at protocol layer
+### Error code, which are returned by deleted functions
+
