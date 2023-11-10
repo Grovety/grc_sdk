@@ -102,6 +102,10 @@ result = grc_restore(&dev)
 ```
 
 ## Methods
+| **Method** | **Description** |
+| --- | --- |
+| int grc\_init( struct grc\_device\* dev, struct grc\_config\* cfg) | Initialization of interface **dev** (grc\_device) and configuration of AI SW (grc\_config) architecture Returns 0 in case of success or an error code (\<0) |
+| int grc\_release(struct grc\_device\* dev) | Releasing resources occupied by driver. Returns 0 in case of success or an error code (\<0) |
 ### Device Configuration
 ### AI SW Configuration
 ### Detection / classification
@@ -110,4 +114,24 @@ result = grc_restore(&dev)
 ## Error Codes
 ### Error codes at protocol layer
 ### Error code, which are returned by deleted functions
+
+## GRC_SDK Structure
+**examples**
+Contains examples of work with sdk
+* **async_excange.c** – file includes examples on synchronous and asynchronous classification function call (grc_inference)
+
+**grc**
+
+SDK Code
+* **drivers** - [Transport Layer] – grc remote protocols. Includes interaction interface over I2C **grc_ll_i2c.h** and implementation for different platforms (MCU Specific code): 
+    * **grc_ll_i2c_esp32.c**
+    * **grc_ll_i2c_stm32.c**
+* **protocol_layer** – [Protocol Layer] – protocol of remote function calls on GRC 
+    * **crc_calculation.h/crc_calculation.c** – calculation of checksum to check integrity of the sent and received data
+    * **grc_ll_api.h/grc_ll_api.c** – deleted GRC functions
+    * **grc_ll_protocol_commands.h/grc_ll_protocol_commands.c** – protocol layers which implements various function call steps: GRC status check, argument transfer, function call, waiting till function is over, receiving finished function code, receiving returned values
+    * **protocol_structures.h** – data structures required for remote call of deleted functions (grc_ll_api)
+* **grc.h** – [Application Layer] – API for communicating with GRC (High Level API)
+* **grc_i2c.с** - [Application Layer] –interface implementation grc.h for I2C protocol
+
 
