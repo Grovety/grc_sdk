@@ -102,18 +102,254 @@ result = grc_restore(&dev)
 ```
 
 ## Methods
-| **Method** | **Description** |
-| --- | --- |
-| int grc\_init( struct grc\_device\* dev, struct grc\_config\* cfg) | Initialization of interface **dev** (grc\_device) and configuration of AI SW (grc\_config) architecture Returns 0 in case of success or an error code (\<0) |
-| int grc\_release(struct grc\_device\* dev) | Releasing resources occupied by driver. Returns 0 in case of success or an error code (\<0) |
 ### Device Configuration
+```
+int grc\_init( struct grc\_device\* dev,
+            struct grc\_config\* cfg)
+```
+Initialization of interface **dev** (grc\_device) and configuration of AI SW (grc\_config) architecture.    Returns 0 in case of success or an error code (\<0)
+
+
+```
+int grc\_release(struct grc\_device\* dev)
+```
+Releasing resources occupied by driver.    Returns 0 in case of success or an error code (\<0)
+
 ### AI SW Configuration
+```
+int grc\_set\_config(struct grc\_device\* dev,
+                                   struct hp\_setup \*hp, int len)
+```
+Configuration of AI SW work via parameters array **hp** (hp\_setup) of **len** length    Returns 0 in case of success or an error code (\<0)
+
+
+```
+int grc\_train(struct grc\_device\* dev,
+                           struct grc\_training\_params\* params,
+                           float\* vals,
+                           uint32\_t len);
+```
+Training GRC on raw data   
+**vals**  – pointer to training data   
+**len**  – array length   
+**params** – training parameters (grc\_training\_params )   
+Returns id of the trained class (\>=0) in case of success or an error code (\<0) 
+
+
+ ```
+ int grc\_clear\_class\_by\_tag( struct grc\_device\* dev,
+                                                   grc\_class\_tag\_t tag)
+```
+(NOT IMPLEMENTED)    
+Deletion of a trained class with the tag defined in info (grc\_class\_info)    
+Returns id of the deleted class (\>=0) in case of success or an error code (\<0)    
+
+
+```
+int grc\_clear\_state(struct grc\_device\* dev)
+```
+Resetting to AI SW default settings    
+Returns performance status: 0 in case of success, or \<0 in case of error    
+
 ### Detection / classification
+```
+int grc\_inference(struct grc\_device\* dev,
+                                   struct grc\_inference\_params\* params,
+                                   float\* vals,
+                                   uint32\_t len);
+```
+Inference on raw data    
+**len –** inference data **len**    
+**vals** – pointer to inference **dat**    
+Returns id class (\>=0), to which data belong or an error code (\<0)    
+error code -1 – failed to determine a class
+```
+int grc\_wait(struct grc\_device\* dev)
+```
+(NOT IMPLEMENTED)    
+Wait till inference or training ends (for asynchronous mode)
 ### Information about AI SW
+```int grc\_get\_classes\_number(struct grc\_device\* dev);
+```
+Returns the number of trained classes (\>=0) or an error code (\<0) 
+```
+int grc\_get\_class\_info\_by\_index(struct grc\_device \* dev,
+                                                          uint32\_t index,
+                                                           struct
+ grc\_class\_info \* info);
+```
+(NOT IMPLEMENTED)    
+Forming class information with **index**  in structure  **info**    
+Returns id (\>=0) in case of success or an error code (\<0)
+```
+int grc\_get\_class\_info\_by\_tag(struct grc\_device \* dev,
+                                                      grc\_class\_tag\_t tag,
+                                                      struct grc\_class\_info \* info);
+```
+(NOT IMPLEMENTED)    
+Forming class information with **tag**  in structure  **info**    
+Returns id (\>=0) in case of success or an error code (\<0)
 ### Saving / Loading AI SW
+```
+int grc\_download(struct grc\_device\* dev,
+                                    grc\_internal\_state\* states,
+                                     uint32\_t \*len)
+```
+Placing information (grc\_internal\_state) about each
+**len** class into **states** array    Returns the number of classes trained on GRC (\>= 0) in case of success or an error code (\<0)    
+ NOTE:  in current implementation, information about all classes is stored in one array, therefore, length of array states ( **len** ) always equals to 1 
+```
+int grc\_upload(struct grc\_device\* dev,
+                                    grc\_internal\_state\* states,
+                                     uint32\_t len)
+```
+Loading information (grc\_internal\_state) about each    
+**len** class into **states** array    
+Returns 0 in case of success or an error code (\<0)    
+NOTE:  in current implementation, information about all classes is stored in one array, therefore, length of array states ( **len** ) always equals to 1, though the value **len** shall correspond the number of classes
+```
+int grc\_store(struct grc\_device\* dev)
+```
+(NOT IMPLEMENTED)    
+Saving current state of AI SW into GRC internal memory    
+Returns 0 in case of success or an error code (\<0)
+```
+int grc\_restore(struct grc\_device\* dev)
+```
+(NOT IMPLEMENTED)    
+Restoring AI SW state from GRC internal memory    
+Returns 0 in case of success or an error code (\<0)
+
 ## Error Codes
+
 ### Error codes at protocol layer
+
+| **Error** | **Error code** | **Meaning** |
+| --- | --- | --- |
+| I2C\_OK | 0 | Function works correctly |
+| --- | --- | --- |
+| NOT\_CLASSIFIED | -1 | Data belong to none of the classes |
+| I2C\_ERROR | -2 | Transport layer error |
+| ARGUMENT\_ERROR | -3 | Argument layer error. E.g., negative values in configuration of GRC AI SW architecture, incorrect flags, an attempt to set up a non-existent **hp** (hp\_setup) parameter, an attempt to classify data as a non-existent class |
+| WRONG\_GRC\_ANSWER | -4 | Fails to interpret GRC response |
+| GRC\_IS\_BUSY | -5 | GRC cannot start performing a new function while the previous one is still running |
+| DATA\_NOT\_DELIVERED | -6 | Data have not been delivered to GRC |
+| NOT\_IMPLEMENTED | -7 | The functionality is yet to be implemented |
+| SDK\_VERSION\_MISMATCH | -8 | The GRC\_SDK version does not match the GRC firmware version |
+
 ### Error code, which are returned by deleted functions
+
+| **Error** | **Error code** | **Meaning** |
+| --- | --- | --- |
+| REMOTE\_FUNCTION\_ERROR | -20 |   |
+| REMOTE\_FUNCTION\_INVAL\_STATE | -21 |   |
+| REMOTE\_FUNCTION\_INVAL\_PARAM | -22 |   |
+| REMOTE\_FUNCTION\_INVAL\_DATA\_LEN | -23 |   |
+| REMOTE\_FUNCTION\_NOT\_CALLED | -24 |   |
+| REMOTE\_FUNCTION\_NOT\_IMPLEMENTED | -25 |   |
+
+## Structures
+
+### grc\_device
+
+Description of the remote GRC AI SW device.
+
+| **Field** | **Description** |
+| --- | --- |
+| void\* ll\_dev | Information about used driver (grc\_ll\_i2c\_dev for I2C) |
+| uint32\_t version | GRC firmware version. It is set up during interface initialization call |
+
+### grc\_ll\_i2c\_dev
+
+GRC AI SW driver parameters
+
+| **Field** | **Description** |
+| --- | --- |
+| uint32\_t type | Remote connection type (I2C/SPI/UART). For I2C PROTOCOL\_INTERFACE\_I2C value is used |
+| int sda\_io\_num | SDA pin |
+| int scl\_io\_num | SCL pin |
+| int data\_ready\_io\_num | Date readiness interrupt pin |
+| int i2c\_num | I2C port |
+| uint32\_t clk\_speed | Clock frequency for I2C master (not greater than 400KHz) |
+| uint16\_t slave\_addr | GRC device address |
+| uint32\_t timeout\_us | GRC response waiting time in milliseconds |
+
+### grc\_config
+
+AI SW Architecture Peculiarities
+
+Initialized by user during the first chip configuration
+
+| **Field** | **Description** |
+| --- | --- |
+| uint32\_t arch | Configuration type: configuration can be selected from the ARCH\_TYPE list. OR set arch into CUSTOM value and configure each of the parameters described below |
+| uint32\_t InputComponents | Input size |
+| uint32\_t OutputComponents | Output size |
+| uint32\_t ReservoirNeurons | Neurons number |
+
+**hp\_setup**
+
+Structure for configuring classification parameters
+
+| **Field** | **Description** |
+| --- | --- |
+| hyperparam\_types type | Parameter configuration |
+| float value | Value of the configured parameter |
+
+hyperparam\_types
+
+| **Field** | **Description** |
+| --- | --- |
+| PREDICT\_SIGNAL | Takes value 1 or 0 |
+| SEPARATE\_INACCURACIES | Takes value 1 or 0 |
+| NOISE |   |
+| INPUT\_SCALING |   |
+| FEEDBACK\_SCALING |   |
+| THRESHOLD\_FACTOR |   |
+
+### grc\_training\_params
+
+| **Field** | **Description** |
+| --- | --- |
+| uint32\_t flags | Allow/Forbid overwriting the existing class with this tag (GRC\_PARAMS\_OVERWRITE). Perform synchronously or asynchronously (GRC\_PARAMS\_ASYNC). Train a class with the tag or create a new tag(GRC\_PARAMS\_ADD\_NEW\_TAG) |
+| grc\_class\_tag\_t tag | Class name |
+| grc\_callback\_t callback | Performance processing for asynchronous variant (NOT IMPLEMENTED) |
+| void\* user\_data | Callback arguments (NOT IMPLEMENTED) |
+
+### grc\_inference\_params
+
+| **Field** | **Description** |
+| --- | --- |
+| uint32\_t flags | Switch on/off class classification (GRC\_PARAMS\_SINGLE\_CLASS). Perform synchronously or asynchronously (GRC\_PARAMS\_ASYNC) |
+| grc\_class\_tag\_t tag | Name of the class for which classification is done. (In case flag GRC\_PARAMS\_SINGLE\_CLASS is set) |
+| grc\_callback\_t callback | Performance processing for asynchronous variant (NOT IMPLEMENTED) |
+| void\* user\_data | Callback arguments (NOT IMPLEMENTED) |
+
+### grc\_class\_info
+
+| **Field** | **Description** |
+| --- | --- |
+| grc\_class\_tag\_t tag | Class name |
+| uint32\_t responce\_len | Length of response array |
+| float\* responce | Class parameters |
+
+### grc\_internal\_state
+
+Structure that contains the internal AI SW device for a particular tag
+
+| **Field** | **Description** |
+| --- | --- |
+| grc\_class\_tag\_t tag | Class name |
+| uint32\_t len | Length of values array |
+| double\* values | Internal model value for recognizing tag |
+
+### Data Types
+
+`typedef double RT;`
+
+`typedef uint32\_t grc\_class\_tag\_t;`
+
+`typedef void(\*grc\_callback\_t)(int status, void\* user\_data);`
 
 ## GRC_SDK Structure
 **examples**
