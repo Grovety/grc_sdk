@@ -331,10 +331,7 @@ Initialized by user during the first chip configuration
 
 | **Field** | **Description** |
 | --- | --- |
-| uint32_t arch | Configuration type: configuration can be selected from the ARCH_TYPE list. OR set arch into CUSTOM value and configure each of the parameters described below |
-| uint32_t InputComponents | Input size |
-| uint32_t OutputComponents | Output size |
-| uint32_t ReservoirNeurons | Neurons number |
+| uint32_t arch | Configuration type: configuration can be selected from the ARCH_TYPE list |
 
 ### hp_setup
 
