@@ -23,11 +23,19 @@ typedef void (*grc_callback_t)(int status, void* user_data);
  * \brief types of GRC architecture
  */
 
+#define ARCH_CONSTRUCTOR(reserved, c, n, i) ((uint8_t)(c) << 16 | (uint8_t)(n) << 8 | (uint8_t)(i))
+
 typedef enum {
-    I3_N10_1,
-    I3_N10_2,
-    I6_N15_0,
-    CUSTOM
+    I1_N10 = ARCH_CONSTRUCTOR(0, 1, 10, 0),
+    I1_N18 = ARCH_CONSTRUCTOR(0, 1, 18, 0),
+    I1_N30 = ARCH_CONSTRUCTOR(0, 1, 30, 0),
+    I1_N100 = ARCH_CONSTRUCTOR(0, 1, 100, 0),
+
+    I3_N10 = ARCH_CONSTRUCTOR(0, 3, 10, 0),
+    I3_N30 = ARCH_CONSTRUCTOR(0, 3, 30, 0),
+    I3_N100 = ARCH_CONSTRUCTOR(0, 3, 100, 0),
+
+    I6_N17 = ARCH_CONSTRUCTOR(0, 6, 17, 0),
 } ARCH_TYPE;
 
 /*!
@@ -36,10 +44,6 @@ typedef enum {
  */
 struct grc_config {
     uint32_t arch;
-
-    uint32_t InputComponents;
-    uint32_t OutputComponents;
-    uint32_t ReservoirNeurons;
 };
 
 /*!

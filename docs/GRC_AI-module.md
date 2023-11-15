@@ -10,7 +10,7 @@ Add AI functionality to a target device by embedding a chip with the pre-install
 
 A **self-learning engine** doing **Anomaly Detection** and **n-Class Classification** in the time series data flow for providing Full turnkey AI functionality **for integration** in products of various complexity.
 
-* AI Module is based on the Reservoir Computing approach for providing and enhancing AI scenarios with 2 working modes:
+* AI Module is based on the ODL (On-Device Learning) Computing approach for providing and enhancing AI scenarios with 2 working modes:
   * **Training** mode
   * **Classification** mode
 * High-performance speed in both modes: **less than 2 sec**
@@ -35,7 +35,7 @@ AI-based data processing offers a more flexible and powerful approach to analyzi
 
 The GRC AI Module is
 
-* A pre-installed firmware with neural network based on the next-generation Reservoir Computing machine learning approach. It provides anomaly detection and classification of input signals in accordance with the pre-trained data.
+* A pre-installed firmware with neural network based on the next-generation ODL Computing approach. It provides anomaly detection and classification of input signals in accordance with the pre-trained data.
 * Intended for the use on ESP32 C3 FN4/H4 MCU, an optimal choice for AI-related scenarios and Artificial Intelligence of Things (AIoT) due to the acceleration for neural network computing and signal processing workloads provided by the SoC.
 
 ## 4 steps to get an AI-driven solution without extra expenses

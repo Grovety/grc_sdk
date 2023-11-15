@@ -67,68 +67,29 @@ static int get_tag_idx(grc_class_tag_t tag, uint32_t flags)
     return class_idx;
 }
 
-int __get_reservoir_neurons_count(struct grc_config* cfg)
+int __get_arch_type(struct grc_config* cfg)
 {
-    switch (cfg->arch) {
-    case I3_N10_1:
-        return 10;
-    case I3_N10_2:
-        return 10;
-    case I6_N15_0:
-        return 15;
-    case CUSTOM:
-        return cfg->ReservoirNeurons;
-    }
-    return -1;
-}
-
-int __get_input_components_count(struct grc_config* cfg)
-{
-    switch (cfg->arch) {
-    case I3_N10_1:
+    switch (cfg->arch)
+    {
+    case I1_N10:
+        return 1;
+    case I1_N18:
+        return 2;
+    case I1_N30:
         return 3;
-    case I3_N10_2:
-        return 3;
-    case I6_N15_0:
+    case I1_N100:
+        return 4;
+    case I3_N10:
+        return 5;
+    case I3_N30:
         return 6;
-    case CUSTOM:
-        return cfg->InputComponents;
+    case I3_N100:
+        return 7;
+    case I6_N17:
+        return 8;
+    default:
+        return NOT_IMPLEMENTED;
     }
-    return -1;
-}
-
-int __get_reservoir_kind(struct grc_config* cfg)
-{
-    int reservoir_neurons = __get_reservoir_neurons_count(cfg);
-    int input_components = __get_input_components_count(cfg);
-    if ((reservoir_neurons < 0) || (input_components < 0)) {
-        return ARGUMENT_ERROR;
-    }
-    int reservoir_kind = NOT_IMPLEMENTED;
-    if (input_components == 1) {
-        if (reservoir_neurons == 10) {
-            reservoir_kind = Ch1_Nn10;
-        } else if (reservoir_neurons == 18) {
-            reservoir_kind = Ch1_Nn18;
-        } else if (reservoir_neurons == 30) {
-            reservoir_kind = Ch1_Nn30;
-        } else if (reservoir_neurons == 100) {
-            reservoir_kind = Ch1_Nn100;
-        }
-    } else if (input_components == 3) {
-        if (reservoir_neurons == 10) {
-            reservoir_kind = Ch3_Nn10;
-        } else if (reservoir_neurons == 30) {
-            reservoir_kind = Ch3_Nn30;
-        } else if (reservoir_neurons == 100) {
-            reservoir_kind = Ch3_Nn100;
-        }
-    } else if (input_components == 6) {
-        if (reservoir_neurons == 17) {
-            reservoir_kind = Ch6_Nn17;
-        }
-    }
-    return reservoir_kind;
 }
 
 int __set_params(struct hp_setup* hp, struct Param* param)
@@ -136,28 +97,28 @@ int __set_params(struct hp_setup* hp, struct Param* param)
     int res = 0;
     switch (hp->type) {
     case PREDICT_SIGNAL:
-        param->m_kind = PredictSignal;
-        param->m_ival = (hp->value > 0) ? 1 : 0;
+        param->kind = PredictSignal;
+        param->ival = (hp->value > 0) ? 1 : 0;
         break;
     case SEPARATE_INACCURACIES:
-        param->m_kind = SeparateInaccuracies;
-        param->m_ival = (hp->value > 0) ? 1 : 0;
+        param->kind = SeparateInaccuracies;
+        param->ival = (hp->value > 0) ? 1 : 0;
         break;
     case NOISE:
-        param->m_kind = Noise;
-        param->m_fval = hp->value;
+        param->kind = Noise;
+        param->fval = hp->value;
         break;
     case INPUT_SCALING:
-        param->m_kind = InputScaling;
-        param->m_fval = hp->value;
+        param->kind = InputScaling;
+        param->fval = hp->value;
         break;
     case FEEDBACK_SCALING:
-        param->m_kind = FeedbackScaling;
-        param->m_fval = hp->value;
+        param->kind = FeedbackScaling;
+        param->fval = hp->value;
         break;
     case THRESHOLD_FACTOR:
-        param->m_kind = ThresholdFactor;
-        param->m_fval = hp->value;
+        param->kind = ThresholdFactor;
+        param->fval = hp->value;
         break;
 
     default:
@@ -178,13 +139,13 @@ int grc_init(struct grc_device* dev, struct grc_config* cfg)
     if (grc_sdk_version != CUR_SDK_VERSION) {
         return SDK_VERSION_MISMATCH;
     }
-    int reservoir_kind = __get_reservoir_kind(cfg);
-    if (reservoir_kind < 0) {
-        return reservoir_kind;
+    int arch_type = __get_arch_type(cfg);
+    if (arch_type < 0) {
+        return arch_type;
     }
     int res;
     Retcode retcode;
-    struct Param param = { .m_kind = ReservoirKind, .m_ival = reservoir_kind };
+    struct Param param = { .kind = ArchType, .ival = arch_type };
     CHECK_REMOTE_CALL(setNeededParameters(dev->ll_dev, &param, &retcode), res, retcode)
     return 0;
 }
@@ -256,7 +217,7 @@ int grc_inference(
         if (class_idx < 0) {
             return ARGUMENT_ERROR;
         }
-        struct Param param = { .m_kind = ReqCategory, .m_ival = class_idx };
+        struct Param param = { .kind = ReqCategory, .ival = class_idx };
         CHECK_REMOTE_CALL(setNeededParameters(dev->ll_dev, &param, &retcode), res, retcode)
     }
     CHECK_REMOTE_CALL(startInference(dev->ll_dev, &retcode), res, retcode)
@@ -282,7 +243,7 @@ int grc_get_classes_number(struct grc_device* dev)
 {
     int res;
     Retcode retcode;
-    struct Param param = { .m_kind = AskExtStatus, .m_ival = CatsQty };
+    struct Param param = { .kind = AskExtStatus, .ival = CatsQty };
     CHECK_REMOTE_CALL(setNeededParameters(dev->ll_dev, &param, &retcode), res, retcode)
 
     int class_numbers;
@@ -318,7 +279,7 @@ int grc_download(struct grc_device* dev, struct grc_internal_state* states, uint
     int res;
     Retcode retcode;
     int i = 0;
-    struct Param param = { .m_kind = AskExtStatus, .m_ival = SaveDataLen };
+    struct Param param = { .kind = AskExtStatus, .ival = SaveDataLen };
 
     CHECK_REMOTE_CALL(setNeededParameters(dev->ll_dev, &param, &retcode), res, retcode)
     int download_len = -1;
@@ -330,8 +291,8 @@ int grc_download(struct grc_device* dev, struct grc_internal_state* states, uint
     states[i].len = download_len;
     states[i].values = (dtype*)malloc(states[i].len * sizeof(dtype));
 
-    param.m_kind = AskExtStatus;
-    param.m_ival = NextDataElm;
+    param.kind = AskExtStatus;
+    param.ival = NextDataElm;
     CHECK_REMOTE_CALL(setNeededParameters(dev->ll_dev, &param, &retcode), res, retcode)
 
     int elm;
@@ -352,7 +313,7 @@ int grc_upload(struct grc_device* dev, struct grc_internal_state* states, uint32
     for (unsigned i = 0; i < states[j].len; ++i) {
         CHECK_REMOTE_CALL(feedDataSingle(dev->ll_dev, states[j].values[i], &retcode), res, retcode);
     }
-    struct Param param = { .m_kind = LoadTrainData, .m_ival = len };
+    struct Param param = { .kind = LoadTrainData, .ival = len };
     CHECK_REMOTE_CALL(setNeededParameters(dev->ll_dev, &param, &retcode), res, retcode)
     tags_trained_len = 0;
     for (int i = 0; i < len; i++) {

@@ -34,27 +34,12 @@ typedef enum {
     FeedbackScaling,
     ThresholdFactor,
 
-    ReservoirKind = 10,
+    ArchType = 10,
 
     AskExtStatus = 20,
     LoadTrainData,
     ReqCategory
 } ParamKind;
-
-typedef enum {
-    Ch_Nn_None = 0,
-
-    Ch1_Nn10,
-    Ch1_Nn18,
-    Ch1_Nn30,
-    Ch1_Nn100,
-
-    Ch3_Nn10,
-    Ch3_Nn30,
-    Ch3_Nn100,
-
-    Ch6_Nn17,
-} ReservoirKinds;
 
 typedef enum {
     None = 0,
@@ -64,10 +49,10 @@ typedef enum {
 } ExtStatusReq;
 
 struct Param {
-    ParamKind m_kind;
+    ParamKind kind;
     union {
-        int m_ival;
-        float m_fval;
+        int ival;
+        float fval;
     };
 };
 

@@ -130,8 +130,8 @@ int __putParamAsBlock(struct Param* arg)
         outBuff[outBuffLen++] = 0xfe;
         uint8_t dataStart = outBuffLen;
         outBuff[outBuffLen++] = 1;
-        __putByte(arg->m_kind);
-        __putInt(arg->m_ival);
+        __putByte(arg->kind);
+        __putInt(arg->ival);
         outBuff[outBuffLen++] = Crc8(&outBuff[dataStart], INT_SIZE + 1 + 1);
         return I2C_OK;
     }

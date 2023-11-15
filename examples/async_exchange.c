@@ -20,7 +20,7 @@ static struct grc_device dev = {
 };
 
 static struct grc_config conf = {
-    .arch = I3_N10_2
+    .arch = I3_N10
 };
 
 void inference_callback(int status, void* user_data)
