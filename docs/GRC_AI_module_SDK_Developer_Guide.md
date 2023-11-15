@@ -2,7 +2,7 @@
 
 ## Overview
 
-<img src="media/grc_sdk.png" width=400px>
+<img src="media/grc_sdk.png">
 
 GRC AI module – is a software designed to perform classification and class recognition tasks.
 Functionality includes:
@@ -14,7 +14,7 @@ Functionality includes:
 * saving and loading a pre-trained model
 GRC_SDK serves as a communication interface for GRC AI module over I2C bus.
 
-<img src="media/grc_sdk_arch.png" width=400px>
+<img src="media/grc_sdk_arch.png">
 
 GRC_SDK has several abstraction layers:
 
