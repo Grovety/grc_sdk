@@ -81,12 +81,14 @@ int __get_arch_type(struct grc_config* cfg)
         return 4;
     case I3_N10:
         return 5;
-    case I3_N30:
+    case I3_N19:
         return 6;
-    case I3_N100:
+    case I3_N30:
         return 7;
-    case I6_N17:
+    case I3_N100:
         return 8;
+    case I6_N17:
+        return 9;
     default:
         return NOT_IMPLEMENTED;
     }
