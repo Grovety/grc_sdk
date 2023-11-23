@@ -2,8 +2,7 @@
 #define _GRC_LL_API_H_
 
 #include <stdint.h>
-#include "grc/drivers/grc_ll_i2c.h"
-#include "grc/protocol_layer/protocol_structures.h"
+#include "grc/i2c/protocol_structures.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,7 +2,7 @@
 #define _GRC_ERROR_CODES_H_
 
 // ==== function result type ====
-#define I2C_OK 0
+#define GRC_OK 0
 #define NOT_CLASSIFIED -1
 #define I2C_ERROR -2
 #define ARGUMENT_ERROR -3
@@ -11,6 +11,7 @@
 #define DATA_NOT_DELIVERED -6
 #define NOT_IMPLEMENTED -7
 #define SDK_VERSION_MISMATCH -8
+#define GRC_GPIO_ERROR -9
 
 #define REMOTE_FUNCTION_ERROR -20
 #define REMOTE_FUNCTION_INVAL_STATE -21

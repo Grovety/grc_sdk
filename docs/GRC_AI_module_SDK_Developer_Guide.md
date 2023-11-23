@@ -276,7 +276,7 @@ int grc_restore(struct grc_device* dev);
 
 | **Error** | **Error code** | **Meaning** |
 | --- | --- | --- |
-| I2C_OK | 0 | Function works correctly |
+| GRC_OK | 0 | Function works correctly |
 | NOT_CLASSIFIED | -1 | Data belong to none of the classes |
 | I2C_ERROR | -2 | Transport layer error |
 | ARGUMENT_ERROR | -3 | Argument layer error. E.g., negative values in configuration of GRC AI SW architecture, incorrect flags, an attempt to set up a non-existent **hp** (hp_setup) parameter, an attempt to classify data as a non-existent class |

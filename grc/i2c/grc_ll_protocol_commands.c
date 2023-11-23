@@ -2,8 +2,9 @@
 #include <stdio.h>
 
 #include "grc/grc_error_codes.h"
-#include "grc/protocol_layer/crc_calculation.h"
-#include "grc/protocol_layer/grc_ll_protocol_commands.h"
+#include "grc/i2c/crc_calculation.h"
+#include "grc/i2c/grc_ll_protocol_commands.h"
+#include "grc/drivers/grc_ll_driver.h"
 
 
 #define BUFFER_SIZE 256
@@ -98,7 +99,7 @@ int __putSimpleCommand(uint8_t cmd, uint8_t func)
             return ARGUMENT_ERROR;
         }
     }
-    return I2C_OK;
+    return GRC_OK;
 }
 
 void __putActivateStreamingCommand(uint8_t blockSize, uint8_t blockCnt)
@@ -118,7 +119,7 @@ int __putIntAsBlock(int arg)
         outBuff[outBuffLen++] = 1;
         __putInt(arg);
         outBuff[outBuffLen++] = Crc8(&outBuff[dataStart], INT_SIZE + 1);
-        return I2C_OK;
+        return GRC_OK;
     }
     return ARGUMENT_ERROR;
 }
@@ -133,7 +134,7 @@ int __putParamAsBlock(struct Param* arg)
         __putByte(arg->kind);
         __putInt(arg->ival);
         outBuff[outBuffLen++] = Crc8(&outBuff[dataStart], INT_SIZE + 1 + 1);
-        return I2C_OK;
+        return GRC_OK;
     }
     return ARGUMENT_ERROR;
 }
@@ -147,7 +148,7 @@ int __putFloatAsBlock(float arg)
         outBuff[outBuffLen++] = 1;
         __putFloat(arg);
         outBuff[outBuffLen++] = Crc8(&outBuff[dataStart], INT_SIZE + 1);
-        return I2C_OK;
+        return GRC_OK;
     }
     return ARGUMENT_ERROR;
 }
@@ -182,7 +183,7 @@ int __putFloatArrayAsBlock(unsigned len, const float* vals, uint8_t blockNumber,
         valuesSavedInBlock++;
     }
     outBuff[outBuffLen++] = Crc8(&outBuff[dataStart], FLOAT_SIZE * valuesSavedInBlock + 1);
-    return I2C_OK;
+    return GRC_OK;
 }
 
 void __resetBuffer()
@@ -190,32 +191,32 @@ void __resetBuffer()
     outBuffLen = 0;
 }
 // =============== COMMUNICATION HELPERS ===========================
-int __writeSimpleCommand(struct grc_ll_i2c_dev* grc, uint8_t cmd, uint8_t func)
+int __writeSimpleCommand(void* ll_dev, uint8_t cmd, uint8_t func)
 {
     int res = __putSimpleCommand(cmd, func);
     if (res < 0) {
         return res;
     }
-    res = grc_ll_i2c_write(grc, outBuff, outBuffLen);
+    res = grc_ll_i2c_write(ll_dev, outBuff, outBuffLen);
     if (res < 0) {
         return res;
     }
-    return I2C_OK;
+    return GRC_OK;
 }
 
 // =============== INTERFACE ===========================
-int initProtocolCommands(struct grc_ll_i2c_dev* grc)
+int initProtocolCommands(void* ll_dev)
 {
-    return grc_ll_i2c_init(grc);
+    return grc_ll_i2c_init(ll_dev);
 }
 
 /* cur executing command if > 0,
 0 -  no command executing,
 error < 0
 */
-int getCurFunction(struct grc_ll_i2c_dev* grc)
+int getCurFunction(void* ll_dev)
 {
-    int res = __writeSimpleCommand(grc, GET_CUR_FUNCTION_CMD, 0);
+    int res = __writeSimpleCommand(ll_dev, GET_CUR_FUNCTION_CMD, 0);
     if (res < 0) {
         return res;
     }
@@ -223,14 +224,14 @@ int getCurFunction(struct grc_ll_i2c_dev* grc)
     // TODO to deal with the delay,
     // TODO to make a repeat request if got garbage
     grc_ll_sleep(10);
-    res = grc_ll_i2c_read(grc, inBuff, SIMPLE_COMMAND_RESULT_SIZE);
+    res = grc_ll_i2c_read(ll_dev, inBuff, SIMPLE_COMMAND_RESULT_SIZE);
     if (res < 0) {
         return res;
     }
     return inBuff[0];
 }
 
-int sendIntArguments(struct grc_ll_i2c_dev* grc, int arg)
+int sendIntArguments(void* ll_dev, int arg)
 {
     uint8_t blockCnt = 1;
     uint8_t blockSize = 8; // 4 for int arg and 4 for protocol wrap
@@ -239,10 +240,10 @@ int sendIntArguments(struct grc_ll_i2c_dev* grc, int arg)
     if (res < 0) {
         return res;
     }
-    return grc_ll_i2c_write(grc, outBuff, outBuffLen);
+    return grc_ll_i2c_write(ll_dev, outBuff, outBuffLen);
 }
 
-int sendFloatArguments(struct grc_ll_i2c_dev* grc, float arg)
+int sendFloatArguments(void* ll_dev, float arg)
 {
     uint8_t blockCnt = 1;
     uint8_t blockSize = 8; // 4 for int arg and 4 for protocol wrap
@@ -251,10 +252,10 @@ int sendFloatArguments(struct grc_ll_i2c_dev* grc, float arg)
     if (res < 0) {
         return res;
     }
-    return grc_ll_i2c_write(grc, outBuff, outBuffLen);
+    return grc_ll_i2c_write(ll_dev, outBuff, outBuffLen);
 }
 
-int sendFloatArrayArguments(struct grc_ll_i2c_dev* grc, unsigned len, const float* vals, uint8_t* blockCnt)
+int sendFloatArrayArguments(void* ll_dev, unsigned len, const float* vals, uint8_t* blockCnt)
 {
     *blockCnt = 252;
     uint8_t blockSize = 255;
@@ -266,7 +267,7 @@ int sendFloatArrayArguments(struct grc_ll_i2c_dev* grc, unsigned len, const floa
     }
     __putActivateStreamingCommand(blockSize, *blockCnt);
     if ((BUFFER_SIZE - blockSize) < ACTIVATE_STREAMING_COMMAND_SIZE) {
-        int res = grc_ll_i2c_write(grc, outBuff, outBuffLen);
+        int res = grc_ll_i2c_write(ll_dev, outBuff, outBuffLen);
         if (res < 0) {
             return res;
         }
@@ -278,7 +279,7 @@ int sendFloatArrayArguments(struct grc_ll_i2c_dev* grc, unsigned len, const floa
             return res;
         }
         if ((BUFFER_SIZE - outBuffLen) < blockSize) {
-            res = grc_ll_i2c_write(grc, outBuff, outBuffLen);
+            res = grc_ll_i2c_write(ll_dev, outBuff, outBuffLen);
             if (res < 0) {
                 return res;
             }
@@ -286,16 +287,16 @@ int sendFloatArrayArguments(struct grc_ll_i2c_dev* grc, unsigned len, const floa
         }
     }
     if (outBuffLen > 0) {
-        int res = grc_ll_i2c_write(grc, outBuff, outBuffLen);
+        int res = grc_ll_i2c_write(ll_dev, outBuff, outBuffLen);
         if (res < 0) {
             return res;
         }
         __resetBuffer();
     }
-    return I2C_OK;
+    return GRC_OK;
 }
 
-int sendParamArguments(struct grc_ll_i2c_dev* grc, struct Param* arg)
+int sendParamArguments(void* ll_dev, struct Param* arg)
 {
     uint8_t blockCnt = 1;
     uint8_t blockSize = INT_SIZE + 1 + 4; // 4 for int arg and 4 for protocol wrap
@@ -304,38 +305,38 @@ int sendParamArguments(struct grc_ll_i2c_dev* grc, struct Param* arg)
     if (res < 0) {
         return res;
     }
-    return grc_ll_i2c_write(grc, outBuff, outBuffLen);
+    return grc_ll_i2c_write(ll_dev, outBuff, outBuffLen);
 }
 
-int getStreamResult(struct grc_ll_i2c_dev* grc, uint8_t* status)
+int getStreamResult(void* ll_dev, uint8_t* status)
 {
 
-    int res = __writeSimpleCommand(grc, GET_STREAMING_RESULT_CMD, 0);
+    int res = __writeSimpleCommand(ll_dev, GET_STREAMING_RESULT_CMD, 0);
     if (res < 0) {
         return res;
     }
     grc_ll_sleep(1);
-    res = grc_ll_i2c_read(grc, status, STREAMING_RESULT_SIZE);
+    res = grc_ll_i2c_read(ll_dev, status, STREAMING_RESULT_SIZE);
     if (res < 0) {
         return res;
     }
-    return I2C_OK;
+    return GRC_OK;
 }
 
-int callFunction(struct grc_ll_i2c_dev* grc, uint8_t functionCmd)
+int callFunction(void* ll_dev, uint8_t functionCmd)
 {
-    int res = __writeSimpleCommand(grc, CALL_FUNCTION_CMD, functionCmd);
+    int res = __writeSimpleCommand(ll_dev, CALL_FUNCTION_CMD, functionCmd);
     return res;
 }
 
-int getFunctionStatus(struct grc_ll_i2c_dev* grc, uint8_t functionCmd, struct FunctionExecutionStatus* status)
+int getFunctionStatus(void* ll_dev, uint8_t functionCmd, struct FunctionExecutionStatus* status)
 {
-    int res = __writeSimpleCommand(grc, GET_FUNCTION_STATUS_CMD, functionCmd);
+    int res = __writeSimpleCommand(ll_dev, GET_FUNCTION_STATUS_CMD, functionCmd);
     if (res < 0) {
         return res;
     }
     grc_ll_sleep(1);
-    res = grc_ll_i2c_read(grc, inBuff, SIMPLE_COMMAND_RESULT_SIZE);
+    res = grc_ll_i2c_read(ll_dev, inBuff, SIMPLE_COMMAND_RESULT_SIZE);
     if (res < 0) {
         return res;
     }
@@ -343,32 +344,32 @@ int getFunctionStatus(struct grc_ll_i2c_dev* grc, uint8_t functionCmd, struct Fu
     status->isCalled = ((inBuff[0] >> 7) & 0x01);
     status->retcode = inBuff[0] & 0x3f;
 
-    return I2C_OK;
+    return GRC_OK;
 }
 
-int getFunctionResult(struct grc_ll_i2c_dev* grc, uint8_t functionCmd, int* result)
+int getFunctionResult(void* ll_dev, uint8_t functionCmd, int* result)
 {
-    int res = __writeSimpleCommand(grc, GET_FUNCTION_RESULT_CMD, functionCmd);
+    int res = __writeSimpleCommand(ll_dev, GET_FUNCTION_RESULT_CMD, functionCmd);
     if (res < 0) {
         return res;
     }
     grc_ll_sleep(1);
-    res = grc_ll_i2c_read(grc, inBuff, GET_FUNCTION_RESULT_CMD);
+    res = grc_ll_i2c_read(ll_dev, inBuff, GET_FUNCTION_RESULT_CMD);
     if (res < 0) {
         return res;
     }
     *result = getInt(inBuff);
-    return I2C_OK;
+    return GRC_OK;
 }
 
-int getCurGRCVersion(struct grc_ll_i2c_dev* grc)
+int getCurGRCVersion(void* ll_dev)
 {
-    int res = __writeSimpleCommand(grc, GET_SDK_VERSION_CMD, 0);
+    int res = __writeSimpleCommand(ll_dev, GET_SDK_VERSION_CMD, 0);
     if (res < 0) {
         return res;
     }
     grc_ll_sleep(10);
-    res = grc_ll_i2c_read(grc, inBuff, INT_SIZE);
+    res = grc_ll_i2c_read(ll_dev, inBuff, INT_SIZE);
     if (res < 0) {
         return res;
     }

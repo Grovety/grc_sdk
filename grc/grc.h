@@ -2,6 +2,7 @@
 #define _GRC_H_
 
 #include <stdint.h>
+#include "grc_error_codes.h"
 
 /*!
  * \brief flags for grc_training_params and grc_inference_params
@@ -268,6 +269,14 @@ int grc_store(struct grc_device* dev);
  * \return Ok(=0) or error code (<0).
  */
 int grc_restore(struct grc_device* dev);
+
+/*!
+ * \brief reset GRC device
+ * \param dev structure for grc device
+ * \return Ok(=0) or error code (<0).
+ */
+int grc_device_reset(struct grc_device* dev);
+
 
 #ifdef __cplusplus
 }

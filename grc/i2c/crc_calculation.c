@@ -1,4 +1,4 @@
-#include "grc/protocol_layer/crc_calculation.h"
+#include "grc/i2c/crc_calculation.h"
 
 /*
   Name  : CRC-8

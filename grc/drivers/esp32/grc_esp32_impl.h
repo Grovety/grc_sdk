@@ -1,6 +1,14 @@
-#include "grc/grc_error_codes.h"
-#include "grc/drivers/grc_ll_i2c.h"
+#ifndef _GRC_DRIVERS_I2C_ESP32_IMPL_H_
+#define _GRC_DRIVERS_I2C_ESP32_IMPL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+#include "grc/grc_error_codes.h"
+#include "grc_esp32.h"
+
+#include "driver/gpio.h"
 #include "driver/i2c.h"
 #include "sdkconfig.h"
 
@@ -63,33 +71,43 @@ void grc_ll_sleep(int ms)
     vTaskDelay((ms) / portTICK_PERIOD_MS);
 }
 
-int grc_ll_i2c_init(struct grc_ll_i2c_dev* dev)
+int grc_ll_i2c_init(void* dev)
 {
+    grc_ll_i2c_dev_esp32* ll_dev = (grc_ll_i2c_dev_esp32*)dev;
+    if (ll_dev->type != PROTOCOL_INTERFACE_I2C_ESP32)
+        return ARGUMENT_ERROR;
 
-    i2c_port_t i2c_master_port = dev->i2c_num;
+    i2c_port_t i2c_master_port = ll_dev->i2c_num;
     i2c_config_t conf;
     conf.mode = I2C_MODE_MASTER;
-    conf.sda_io_num = dev->sda_io_num;
+    conf.sda_io_num = ll_dev->sda_io_num;
     conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.scl_io_num = dev->scl_io_num;
+    conf.scl_io_num = ll_dev->scl_io_num;
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.master.clk_speed = dev->clk_speed;
-    ;
+    conf.master.clk_speed = ll_dev->clk_speed;
+
     conf.clk_flags = 0;
     CHECK_I2C_RESULT(i2c_param_config(i2c_master_port, &conf))
     CHECK_I2C_RESULT(i2c_driver_install(i2c_master_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0))
-    return I2C_OK;
+    return GRC_OK;
 }
 
-int grc_ll_i2c_release(struct grc_ll_i2c_dev* dev)
+int grc_ll_i2c_release(void* dev)
 {
-    CHECK_I2C_RESULT(i2c_driver_delete(dev->i2c_num))
-    return I2C_OK;
+    grc_ll_i2c_dev_esp32* ll_dev = (grc_ll_i2c_dev_esp32*)dev;
+    if (ll_dev->type != PROTOCOL_INTERFACE_I2C_ESP32)
+        return ARGUMENT_ERROR;
+
+    CHECK_I2C_RESULT(i2c_driver_delete(ll_dev->i2c_num))
+    return GRC_OK;
 }
 
-int grc_ll_i2c_write(struct grc_ll_i2c_dev* dev, void* data, int len)
+int grc_ll_i2c_write(void* dev, void* data, int len)
 {
-    uint8_t *p8 = data;
+    grc_ll_i2c_dev_esp32* ll_dev = (grc_ll_i2c_dev_esp32*)dev;
+    if (ll_dev->type != PROTOCOL_INTERFACE_I2C_ESP32)
+        return ARGUMENT_ERROR;
+
     if (len < 1) {
         return ARGUMENT_ERROR;
     }
@@ -97,18 +115,24 @@ int grc_ll_i2c_write(struct grc_ll_i2c_dev* dev, void* data, int len)
     if (!cmd) {
         return I2C_ERROR;
     }
+
+    uint8_t *p8 = data;
     CHECK_I2C_RESULT(i2c_master_start(cmd))
-    CHECK_I2C_RESULT(i2c_master_write_byte(cmd, (dev->slave_addr << 1) | WRITE_BIT, ACK_CHECK_EN))
+    CHECK_I2C_RESULT(i2c_master_write_byte(cmd, (ll_dev->slave_addr << 1) | WRITE_BIT, ACK_CHECK_EN))
     CHECK_I2C_RESULT(i2c_master_write(cmd, p8, len, ACK_CHECK_EN))
     CHECK_I2C_RESULT(i2c_master_stop(cmd))
-    CHECK_I2C_RESULT(i2c_master_cmd_begin(dev->i2c_num, cmd, dev->timeout_us))
+    CHECK_I2C_RESULT(i2c_master_cmd_begin(ll_dev->i2c_num, cmd, ll_dev->timeout_us))
+    // TODO: fix possible absense of link deletion in case of error before
     i2c_cmd_link_delete(cmd);
     return len;
 }
 
-int grc_ll_i2c_read(struct grc_ll_i2c_dev* dev, void* data, int len)
+int grc_ll_i2c_read(void* dev, void* data, int len)
 {
-    uint8_t *p8 = data;
+    grc_ll_i2c_dev_esp32* ll_dev = (grc_ll_i2c_dev_esp32*)dev;
+    if (ll_dev->type != PROTOCOL_INTERFACE_I2C_ESP32)
+        return ARGUMENT_ERROR;
+
     if (len < 1) {
         return ARGUMENT_ERROR;
     }
@@ -116,19 +140,70 @@ int grc_ll_i2c_read(struct grc_ll_i2c_dev* dev, void* data, int len)
     if (!cmd) {
         return I2C_ERROR;
     }
+
+    uint8_t *p8 = data;
     CHECK_I2C_RESULT(i2c_master_start(cmd))
-    CHECK_I2C_RESULT(i2c_master_write_byte(cmd, (dev->slave_addr << 1) | READ_BIT, ACK_CHECK_EN))
+    CHECK_I2C_RESULT(i2c_master_write_byte(cmd, (ll_dev->slave_addr << 1) | READ_BIT, ACK_CHECK_EN))
     if (len > 1) {
         CHECK_I2C_RESULT(i2c_master_read(cmd, p8, len - 1, (i2c_ack_type_t)ACK_VAL))
     }
 
     CHECK_I2C_RESULT(i2c_master_read_byte(cmd, &p8[len - 1], (i2c_ack_type_t)NACK_VAL))
     CHECK_I2C_RESULT(i2c_master_stop(cmd))
-    CHECK_I2C_RESULT(i2c_master_cmd_begin(dev->i2c_num, cmd, dev->timeout_us))
+    CHECK_I2C_RESULT(i2c_master_cmd_begin(ll_dev->i2c_num, cmd, ll_dev->timeout_us))
     i2c_cmd_link_delete(cmd);
     return len;
 }
 
-void grc_ll_i2c_callback(struct grc_ll_i2c_dev* dev)
+void grc_ll_i2c_callback(void* dev)
 {
+    grc_ll_i2c_dev_esp32* ll_dev = (grc_ll_i2c_dev_esp32*)dev;
+    if (ll_dev->type != PROTOCOL_INTERFACE_I2C_ESP32)
+        return;
+
+
 }
+
+int grc_ll_gpio_init(void* dev)
+{
+    grc_ll_i2c_dev_esp32* ll_dev = (grc_ll_i2c_dev_esp32*)dev;
+    if (ll_dev->type != PROTOCOL_INTERFACE_I2C_ESP32)
+        return ARGUMENT_ERROR;
+
+    gpio_num_t pin = ll_dev->reset_io_num;
+    gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+
+    return GRC_OK;
+}
+
+int grc_ll_gpio_reset_high(void* dev)
+{
+    grc_ll_i2c_dev_esp32* ll_dev = (grc_ll_i2c_dev_esp32*)dev;
+    if (ll_dev->type != PROTOCOL_INTERFACE_I2C_ESP32)
+        return ARGUMENT_ERROR;
+
+    gpio_num_t pin = ll_dev->reset_io_num;
+    gpio_set_level(pin, 1);
+    gpio_pulldown_dis(pin);
+    gpio_pullup_en(pin);
+
+    return GRC_OK;
+}
+
+int grc_ll_gpio_reset_low(void* dev)
+{
+    grc_ll_i2c_dev_esp32* ll_dev = (grc_ll_i2c_dev_esp32*)dev;
+    if (ll_dev->type != PROTOCOL_INTERFACE_I2C_ESP32)
+        return ARGUMENT_ERROR;
+
+    gpio_num_t pin = ll_dev->reset_io_num;
+    gpio_set_level(pin, 0);
+
+    return GRC_OK;
+}
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif // _GRC_DRIVERS_I2C_ESP32_IMPL_H_

@@ -3,9 +3,8 @@
 
 #include "grc/grc.h"
 #include "grc/grc_error_codes.h"
-#include "grc/drivers/grc_ll_i2c.h"
-#include "grc/protocol_layer/grc_ll_api.h"
-#include "grc/protocol_layer/protocol_structures.h"
+#include "grc/i2c/grc_ll_api.h"
+#include "grc/i2c/protocol_structures.h"
 
 #define CUR_SDK_VERSION 1
 
@@ -332,4 +331,24 @@ int grc_store(struct grc_device* dev)
 int grc_restore(struct grc_device* dev)
 {
     return NOT_IMPLEMENTED;
+}
+
+int grc_device_reset(struct grc_device* dev)
+{
+    int res = grc_ll_gpio_init(dev->ll_dev);
+    if (GRC_OK != res)
+        return res;
+
+    res = grc_ll_gpio_reset_low(dev->ll_dev);
+    if (GRC_OK != res)
+        return res;
+
+    grc_ll_sleep(100);
+
+    res = grc_ll_gpio_reset_high(dev->ll_dev);
+    if (GRC_OK != res)
+        return res;
+
+    grc_ll_sleep(1000);
+    return res;
 }

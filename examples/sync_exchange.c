@@ -4,8 +4,8 @@
 #include <stdio.h>
 
 // specify interface GRC chip connected to
-static struct grc_ll_i2c_dev ll_dev = {
-    .type = PROTOCOL_INTERFACE_I2C,
+static struct grc_ll_i2c_dev_esp32 ll_dev = {
+    .type = PROTOCOL_INTERFACE_I2C_ESP32,
     .sda_io_num = 12,
     .scl_io_num = 13,
     .data_ready_io_num = 14,

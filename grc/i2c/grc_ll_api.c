@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "grc/grc_error_codes.h"
-#include "grc/protocol_layer/grc_ll_api.h"
-#include "grc/protocol_layer/grc_ll_protocol_commands.h"
+#include "grc/i2c/grc_ll_protocol_commands.h"
 
 #define FUNCTION_START_TRAINING_CMD 0x07
 #define FUNCTION_STOP_TRAINING_CMD 0x08
@@ -37,13 +36,13 @@ int __isExecutingAllowed(struct grc_ll_i2c_dev* grc)
         return GRC_IS_BUSY;
     }
 
-    return I2C_OK;
+    return GRC_OK;
 }
 
 int __checkSingleStatus(const uint8_t* status)
 {
     uint8_t packetStatus = status[31] & 1;
-    return packetStatus == 1 ? I2C_OK : DATA_NOT_DELIVERED;
+    return packetStatus == 1 ? GRC_OK : DATA_NOT_DELIVERED;
 }
 
 int __checkFloatArrayStatus(const uint8_t* status, uint8_t blockCnt)
@@ -54,7 +53,7 @@ int __checkFloatArrayStatus(const uint8_t* status, uint8_t blockCnt)
         for (uint8_t i = 0; i < 8; i++) {
 
             if (blockCnt <= packageNumber++) {
-                return I2C_OK;
+                return GRC_OK;
             }
             // if block was not delivered
             if (((status[STATUS_BYTE_CNT - j - 1] & 1 << i) >> i) == 0) {
@@ -62,7 +61,7 @@ int __checkFloatArrayStatus(const uint8_t* status, uint8_t blockCnt)
             }
         }
     }
-    return I2C_OK;
+    return GRC_OK;
 }
 
 int __callStartTrainingFunction(struct grc_ll_i2c_dev* grc, int category)
@@ -130,7 +129,7 @@ int __waitResultActive(struct grc_ll_i2c_dev* grc, uint8_t functionCmd, Retcode*
             break;
         }
     }
-    return I2C_OK;
+    return GRC_OK;
 }
 
 int initProtocolLayer(struct grc_ll_i2c_dev* grc)
